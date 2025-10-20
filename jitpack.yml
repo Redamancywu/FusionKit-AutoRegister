@@ -1,0 +1,12 @@
+# JitPack 配置文件
+jdk:
+  - openjdk11
+
+# 构建配置
+build:
+  - ./gradlew :FusionKit-AutoRegister-Processor:build
+  - ./gradlew :FusionKit-AutoRegister-Processor:publishToMavenLocal
+
+# 发布配置
+publish:
+  - ./gradlew :FusionKit-AutoRegister-Processor:publishToMavenLocal
