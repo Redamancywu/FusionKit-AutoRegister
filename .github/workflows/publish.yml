@@ -47,3 +47,5 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 添加调试信息
+          GITHUB_REPOSITORY: ${{ github.repository }}
