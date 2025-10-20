@@ -44,15 +44,7 @@ FusionKit/
 
 ## 🚀 快速开始
 
-### 1. 添加插件依赖
-
-将处理器模块添加到项目的 `settings.gradle.kts` 中：
-
-```kotlin
-include(":FusionKit-AutoRegister-Processor")
-```
-
-### 2. 配置 KSP
+### 1. 配置 KSP
 
 在应用模块的 `build.gradle.kts` 中：
 
@@ -61,13 +53,20 @@ plugins {
     id("com.google.devtools.ksp") version "2.0.21-1.0.28"
 }
 
+repositories {
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/Redamancywu/FusionKit-AutoRegister")
+    }
+}
+
 dependencies {
-    ksp(project(":FusionKit-AutoRegister-Processor"))
-    implementation(project(":FusionKit-AutoRegister-Processor"))
+    ksp("com.redamancy.fusionkit:autoregister-processor:1.0.0")
+    implementation("com.redamancy.fusionkit:autoregister-processor:1.0.0")
 }
 ```
 
-### 3. 定义服务接口
+### 2. 定义服务接口
 
 创建你的服务接口：
 
@@ -78,7 +77,7 @@ interface UserService {
 }
 ```
 
-### 4. 实现并注册
+### 3. 实现并注册
 
 实现你的服务并注册它：
 
@@ -96,7 +95,7 @@ class UserServiceImpl : UserService {
 }
 ```
 
-### 5. 使用生成的服务
+### 4. 使用生成的服务
 
 框架会自动生成 `UserServiceProviders` 类：
 

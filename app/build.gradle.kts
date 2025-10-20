@@ -37,10 +37,11 @@ android {
 }
 
 dependencies {
-    // KSP 处理器依赖 - 使用 JitPack (简单格式)
-    ksp("com.github.Redamancywu:FusionKit-AutoRegister:v1.0.0")
-    implementation("com.github.Redamancywu:FusionKit-AutoRegister:v1.0.0")
-    // 注解依赖 - 使用 JitPack (简单格式)
+    // KSP 处理器依赖 - 使用 GitHub Packages
+    ksp("com.redamancy.fusionkit:autoregister-processor:1.0.0")
+
+    // 注解依赖 - 使用 GitHub Packages
+    implementation("com.redamancy.fusionkit:autoregister-processor:1.0.0")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

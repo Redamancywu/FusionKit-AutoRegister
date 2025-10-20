@@ -15,6 +15,12 @@ java {
     withJavadocJar()
 }
 
+// 添加资源文件到 JAR 包中
+tasks.jar {
+    from("proguard-rules.pro")
+    archiveClassifier.set("")
+}
+
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11

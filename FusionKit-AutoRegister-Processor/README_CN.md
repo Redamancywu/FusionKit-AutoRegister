@@ -81,9 +81,20 @@ plugins {
     id("com.google.devtools.ksp") version "2.0.21-1.0.28"
 }
 
+repositories {
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/Redamancywu/FusionKit-AutoRegister")
+        credentials {
+            username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+        }
+    }
+}
+
 dependencies {
-    ksp(project(":FusionKit-AutoRegister-Processor"))
-    implementation(project(":FusionKit-AutoRegister-Processor"))
+    ksp("com.redamancy.fusionkit:autoregister-processor:1.0.0")
+    implementation("com.redamancy.fusionkit:autoregister-processor:1.0.0")
 }
 ```
 

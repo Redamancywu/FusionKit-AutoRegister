@@ -44,15 +44,7 @@ FusionKit/
 
 ## 🚀 Quick Start
 
-### 1. Add Plugin Dependency
-
-Add the processor module to your project's `settings.gradle.kts`:
-
-```kotlin
-include(":FusionKit-AutoRegister-Processor")
-```
-
-### 2. Configure KSP
+### 1. Configure KSP
 
 In your app module's `build.gradle.kts`:
 
@@ -61,13 +53,20 @@ plugins {
     id("com.google.devtools.ksp") version "2.0.21-1.0.28"
 }
 
+repositories {
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/Redamancywu/FusionKit-AutoRegister")
+    }
+}
+
 dependencies {
-    ksp(project(":FusionKit-AutoRegister-Processor"))
-    implementation(project(":FusionKit-AutoRegister-Processor"))
+    ksp("com.redamancy.fusionkit:autoregister-processor:1.0.0")
+    implementation("com.redamancy.fusionkit:autoregister-processor:1.0.0")
 }
 ```
 
-### 3. Define Service Interface
+### 2. Define Service Interface
 
 Create your service interface:
 
@@ -78,7 +77,7 @@ interface UserService {
 }
 ```
 
-### 4. Implement and Register
+### 3. Implement and Register
 
 Implement your service and register it:
 
@@ -96,7 +95,7 @@ class UserServiceImpl : UserService {
 }
 ```
 
-### 5. Use Generated Services
+### 4. Use Generated Services
 
 The framework automatically generates a `UserServiceProviders` class:
 
