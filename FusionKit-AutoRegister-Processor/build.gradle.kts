@@ -26,10 +26,21 @@ dependencies {
     implementation("com.squareup:kotlinpoet:2.1.0")
 }
 
-// JitPack 兼容的发布配置
+// GitHub Packages 发布配置
 publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/Redamancywu/FusionKit-AutoRegister")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+    
     publications {
-        create<MavenPublication>("maven") {
+        create<MavenPublication>("gpr") {
             from(components["java"])
             artifactId = "autoregister-processor"
             
@@ -49,7 +60,7 @@ publishing {
                     developer {
                         id.set("Redamancywu")
                         name.set("Redamancy")
-                        email.set("your-email@example.com")
+                        email.set("22340676@qq.com")
                     }
                 }
                 

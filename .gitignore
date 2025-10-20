@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# 敏感信息 - 不提交到仓库
+gradle.properties
+*.key
+*.token
+*.secret
