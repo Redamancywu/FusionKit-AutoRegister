@@ -15,66 +15,125 @@ class AutoRegisterSymbolProcessor(
 ) : SymbolProcessor {
 
     private val interfaceToEntries = mutableMapOf<String, MutableList<ServiceEntry>>()
+    
+    /**
+     * 增量处理支持：记录已处理的文件，避免重复处理
+     */
+    private val processedFiles = mutableSetOf<String>()
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         interfaceToEntries.clear()
 
-        val symbols = resolver.getSymbolsWithAnnotation(AutoRegister::class.qualifiedName!!)
-            .filter { it.validate() && it is KSClassDeclaration }
-            .filterIsInstance<KSClassDeclaration>()
+        val symbols = try {
+            resolver.getSymbolsWithAnnotation(AutoRegister::class.qualifiedName!!)
+                .filter { it.validate() && it is KSClassDeclaration }
+                .filterIsInstance<KSClassDeclaration>()
+                .toList()
+        } catch (e: Exception) {
+            logger.error("Failed to get symbols with annotation: ${e.message}")
+            return emptyList()
+        }
 
         val currentEnv = options["auto.register.env"] ?: "RELEASE"
+        val debugMode = options["auto.register.debug"]?.toBoolean() ?: false
+
+        if (debugMode) {
+            logger.info("AutoRegister processor started with environment: $currentEnv")
+            logger.info("Found ${symbols.size} annotated classes")
+        }
+
+        val invalidSymbols = mutableListOf<KSAnnotated>()
 
         for (classDecl in symbols) {
-            // 支持多个 @AutoRegister 注解
-            val autoRegisterAnnotations = classDecl.annotations.filter { it.shortName.asString() == "AutoRegister" }
+            try {
+                // 支持多个 @AutoRegister 注解
+                val autoRegisterAnnotations = classDecl.annotations.filter { it.shortName.asString() == "AutoRegister" }
 
-            if (!classDecl.isPublic()) {
-                logger.error("Class must be public", classDecl)
-                continue
-            }
-
-            val className = classDecl.qualifiedName?.asString() ?: continue
-            val simpleName = classDecl.simpleName.asString()
-
-            for (annotation in autoRegisterAnnotations) {
-                val args = annotation.arguments.associate { it.name?.asString() to it.value }
-
-                // 必填：value
-                val interfaces = (args["value"] as? List<KSType>)
-                    ?.mapNotNull { it.declaration.qualifiedName?.asString() }
-
-                if (interfaces == null) {
-                    logger.error("'value' is required in @AutoRegister", classDecl)
+                if (!classDecl.isPublic()) {
+                    logger.warning("Class ${classDecl.qualifiedName?.asString()} must be public for @AutoRegister")
+                    invalidSymbols.add(classDecl)
                     continue
                 }
 
-                // 可选参数
-                val priority = (args["priority"] as? Int) ?: 0
-                val enabledIn = (args["enabledIn"] as? List<KSType>)?.map { it.declaration.simpleName.asString() } ?: listOf("ALL")
-                val isObject = (args["isObject"] as? Boolean) ?: false
-
-                if (!enabledIn.any { it == "ALL" || it == currentEnv }) continue
-
-                for (iface in interfaces) {
-                    val name = (args["name"] as? String)?.takeIf { it.isNotEmpty() } ?: simpleName
-                    val type = (args["type"] as? String)?.takeIf { it.isNotEmpty() } ?: iface
-
-                    interfaceToEntries.getOrPut(iface) { mutableListOf() }.add(
-                        ServiceEntry(className, name, type, priority, isObject)
-                    )
+                val className = classDecl.qualifiedName?.asString() ?: {
+                    logger.error("Class has no qualified name", classDecl)
+                    invalidSymbols.add(classDecl)
+                    continue
                 }
+                val simpleName = classDecl.simpleName.asString()
+
+                for (annotation in autoRegisterAnnotations) {
+                    val args = annotation.arguments.associate { it.name?.asString() to it.value }
+
+                    // 必填：value
+                    val interfaces = (args["value"] as? List<KSType>)
+                        ?.mapNotNull { it.declaration.qualifiedName?.asString() }
+
+                    if (interfaces == null || interfaces.isEmpty()) {
+                        logger.error("'value' is required and cannot be empty in @AutoRegister", classDecl)
+                        invalidSymbols.add(classDecl)
+                        continue
+                    }
+
+                    // 可选参数
+                    val priority = (args["priority"] as? Int) ?: 0
+                    val enabledIn = (args["enabledIn"] as? List<KSType>)?.map { it.declaration.simpleName.asString() } ?: listOf("ALL")
+                    val isObject = (args["isObject"] as? Boolean) ?: false
+
+                    if (!enabledIn.any { it == "ALL" || it == currentEnv }) {
+                        if (debugMode) {
+                            logger.info("Skipping class $className - not enabled in current environment $currentEnv")
+                        }
+                        continue
+                    }
+
+                    for (iface in interfaces) {
+                        val name = (args["name"] as? String)?.takeIf { it.isNotEmpty() } ?: simpleName
+                        val type = (args["type"] as? String)?.takeIf { it.isNotEmpty() } ?: iface
+
+                        // 检查重复的服务名称
+                        val existingEntries = interfaceToEntries[iface]
+                        val duplicateName = existingEntries?.find { it.name == name }
+                        if (duplicateName != null) {
+                            logger.error("Duplicate service name '$name' for interface $iface. Existing: ${duplicateName.className}, Current: $className")
+                            invalidSymbols.add(classDecl)
+                            continue
+                        }
+
+                        interfaceToEntries.getOrPut(iface) { mutableListOf() }.add(
+                            ServiceEntry(className, name, type, priority, isObject)
+                        )
+                        
+                        if (debugMode) {
+                            logger.info("Registered service: $name (type: $type, priority: $priority) for interface $iface")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                logger.error("Error processing class ${classDecl.qualifiedName?.asString()}: ${e.message}", classDecl)
+                invalidSymbols.add(classDecl)
             }
+        }
+
+        if (debugMode) {
+            logger.info("Processing completed. Found ${interfaceToEntries.size} interfaces with services")
         }
 
         // 获取所有被引用的接口（确保即使无实现也生成聚合类）
         val allReferencedInterfaces = getAllReferencedInterfaces(resolver)
         allReferencedInterfaces.forEach { iface ->
-            val entries = interfaceToEntries[iface] ?: emptyList()
-            generateProvidersClass(iface, entries)
+            try {
+                val entries = interfaceToEntries[iface] ?: emptyList()
+                generateProvidersClass(iface, entries)
+                if (debugMode && entries.isEmpty()) {
+                    logger.info("Generated empty provider for interface $iface")
+                }
+            } catch (e: Exception) {
+                logger.error("Failed to generate provider for interface $iface: ${e.message}")
+            }
         }
 
-        return emptyList()
+        return invalidSymbols
     }
 
     private fun getAllReferencedInterfaces(resolver: Resolver): Set<String> {
