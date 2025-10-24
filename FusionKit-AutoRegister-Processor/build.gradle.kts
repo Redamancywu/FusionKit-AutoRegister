@@ -30,6 +30,16 @@ kotlin {
 dependencies {
     implementation("com.google.devtools.ksp:symbol-processing-api:2.0.21-1.0.28")
     implementation("com.squareup:kotlinpoet:2.1.0")
+    
+    // 测试依赖
+    testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
+    testImplementation("io.mockk:mockk:1.13.7")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+}
+
+// 配置测试任务
+tasks.named<Test>("test") {
+    useJUnitPlatform()
 }
 
 // GitHub Packages 发布配置

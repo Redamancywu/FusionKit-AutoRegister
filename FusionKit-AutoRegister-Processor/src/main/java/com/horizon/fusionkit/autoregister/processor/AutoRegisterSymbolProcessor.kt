@@ -10,9 +10,11 @@ import java.io.OutputStreamWriter
 
 class AutoRegisterSymbolProcessor(
     private val codeGenerator: CodeGenerator,
-    private val logger: KSPLogger,
+    private val kspLogger: KSPLogger,
     private val options: Map<String, String>
 ) : SymbolProcessor {
+    
+    private val logger = Logger(kspLogger, options)
 
     private val interfaceToEntries = mutableMapOf<String, MutableList<ServiceEntry>>()
     
@@ -30,17 +32,14 @@ class AutoRegisterSymbolProcessor(
                 .filterIsInstance<KSClassDeclaration>()
                 .toList()
         } catch (e: Exception) {
-            logger.error("Failed to get symbols with annotation: ${e.message}")
+            kspLogger.error("Failed to get symbols with annotation: ${e.message}")
             return emptyList()
         }
 
         val currentEnv = options["auto.register.env"] ?: "RELEASE"
-        val debugMode = options["auto.register.debug"]?.toBoolean() ?: false
 
-        if (debugMode) {
-            logger.info("AutoRegister processor started with environment: $currentEnv")
-            logger.info("Found ${symbols.size} annotated classes")
-        }
+        logger.info("AutoRegister processor started with environment: $currentEnv")
+        logger.info("Found ${symbols.size} annotated classes")
 
         val invalidSymbols = mutableListOf<KSAnnotated>()
 
@@ -50,14 +49,17 @@ class AutoRegisterSymbolProcessor(
                 val autoRegisterAnnotations = classDecl.annotations.filter { it.shortName.asString() == "AutoRegister" }
 
                 if (!classDecl.isPublic()) {
-                    logger.warning("Class ${classDecl.qualifiedName?.asString()} must be public for @AutoRegister")
+                    logger.warn("Class ${classDecl.qualifiedName?.asString()} must be public for @AutoRegister")
                     invalidSymbols.add(classDecl)
                     continue
                 }
 
-                val className = classDecl.qualifiedName?.asString() ?: {
+                val className = classDecl.qualifiedName?.asString() ?: run {
                     logger.error("Class has no qualified name", classDecl)
                     invalidSymbols.add(classDecl)
+                    null
+                }
+                if (className == null) {
                     continue
                 }
                 val simpleName = classDecl.simpleName.asString()
@@ -79,11 +81,17 @@ class AutoRegisterSymbolProcessor(
                     val priority = (args["priority"] as? Int) ?: 0
                     val enabledIn = (args["enabledIn"] as? List<KSType>)?.map { it.declaration.simpleName.asString() } ?: listOf("ALL")
                     val isObject = (args["isObject"] as? Boolean) ?: false
+                    
+                    // 新功能参数
+                    val configFile = (args["configFile"] as? String) ?: ""
+                    val configKey = (args["configKey"] as? String) ?: ""
+                    val enableLifecycle = (args["enableLifecycle"] as? Boolean) ?: false
+                    val enableMetrics = (args["enableMetrics"] as? Boolean) ?: false
+                    val pluginId = (args["pluginId"] as? String) ?: ""
+                    val pluginVersion = (args["pluginVersion"] as? String) ?: ""
 
                     if (!enabledIn.any { it == "ALL" || it == currentEnv }) {
-                        if (debugMode) {
-                            logger.info("Skipping class $className - not enabled in current environment $currentEnv")
-                        }
+                        logger.debug("Skipping class $className - not enabled in current environment $currentEnv")
                         continue
                     }
 
@@ -95,18 +103,27 @@ class AutoRegisterSymbolProcessor(
                         val existingEntries = interfaceToEntries[iface]
                         val duplicateName = existingEntries?.find { it.name == name }
                         if (duplicateName != null) {
-                            logger.error("Duplicate service name '$name' for interface $iface. Existing: ${duplicateName.className}, Current: $className")
+                            logger.error("Duplicate service name '$name' for interface $iface. Existing: ${duplicateName.className}, Current: $className", classDecl)
                             invalidSymbols.add(classDecl)
                             continue
                         }
 
                         interfaceToEntries.getOrPut(iface) { mutableListOf() }.add(
-                            ServiceEntry(className, name, type, priority, isObject)
+                            ServiceEntry(
+                                className, name, type, priority, isObject,
+                                configFile, configKey, enableLifecycle, enableMetrics,
+                                pluginId, pluginVersion
+                            )
                         )
                         
-                        if (debugMode) {
-                            logger.info("Registered service: $name (type: $type, priority: $priority) for interface $iface")
-                        }
+                        val features = mutableListOf<String>()
+                        if (configFile.isNotEmpty()) features.add("config")
+                        if (enableLifecycle) features.add("lifecycle")
+                        if (enableMetrics) features.add("metrics")
+                        if (pluginId.isNotEmpty()) features.add("plugin")
+                        
+                        val featureInfo = if (features.isNotEmpty()) " [${features.joinToString(", ")}]" else ""
+                        logger.debug("Registered service: $name (type: $type, priority: $priority)$featureInfo for interface $iface")
                     }
                 }
             } catch (e: Exception) {
@@ -115,9 +132,7 @@ class AutoRegisterSymbolProcessor(
             }
         }
 
-        if (debugMode) {
-            logger.info("Processing completed. Found ${interfaceToEntries.size} interfaces with services")
-        }
+        logger.info("Processing completed. Found ${interfaceToEntries.size} interfaces with services")
 
         // 获取所有被引用的接口（确保即使无实现也生成聚合类）
         val allReferencedInterfaces = getAllReferencedInterfaces(resolver)
@@ -125,8 +140,8 @@ class AutoRegisterSymbolProcessor(
             try {
                 val entries = interfaceToEntries[iface] ?: emptyList()
                 generateProvidersClass(iface, entries)
-                if (debugMode && entries.isEmpty()) {
-                    logger.info("Generated empty provider for interface $iface")
+                if (entries.isEmpty()) {
+                    logger.debug("Generated empty provider for interface $iface")
                 }
             } catch (e: Exception) {
                 logger.error("Failed to generate provider for interface $iface: ${e.message}")
@@ -300,10 +315,10 @@ class AutoRegisterSymbolProcessor(
     }
 
     companion object {
-        private val LIST_CLASS = List::class.asClassName()
-        private val MAP_CLASS = Map::class.asClassName()
-        private val STRING_CLASS = String::class.asClassName()
-        private val COLLECTIONS_CLASS = ClassName("java.util", "Collections")
+        val LIST_CLASS = List::class.asClassName()
+        val MAP_CLASS = Map::class.asClassName()
+        val STRING_CLASS = String::class.asClassName()
+        val COLLECTIONS_CLASS = ClassName("java.util", "Collections")
     }
 
     data class ServiceEntry(
@@ -311,6 +326,12 @@ class AutoRegisterSymbolProcessor(
         val name: String,
         val type: String,
         val priority: Int,
-        val isObject: Boolean
+        val isObject: Boolean,
+        val configFile: String = "",
+        val configKey: String = "",
+        val enableLifecycle: Boolean = false,
+        val enableMetrics: Boolean = false,
+        val pluginId: String = "",
+        val pluginVersion: String = ""
     )
 }

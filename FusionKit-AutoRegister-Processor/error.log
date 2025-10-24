@@ -1,0 +1,40 @@
+
+e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/AutoRegisterSymbolProcessorProvider.kt:11:13 No parameter with name 'logger' found.e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/AutoRegisterSymbolProcessorProvider.kt:11:13 No parameter with name 'logger' found.
+
+e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/AutoRegisterSymbolProcessorProvider.kt:12:13 No value passed for parameter 'kspLogger'.e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/AutoRegisterSymbolProcessorProvider.kt:12:13 No value passed for parameter 'kspLogger'.
+
+e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/Logger.kt:19:48 Argument type mismatch: actual type is 'kotlin.Any?', but 'com.google.devtools.ksp.symbol.KSNode?' was expected.e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/Logger.kt:19:48 Argument type mismatch: actual type is 'kotlin.Any?', but 'com.google.devtools.ksp.symbol.KSNode?' was expected.
+
+e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/Logger.kt:28:47 Argument type mismatch: actual type is 'kotlin.Any?', but 'com.google.devtools.ksp.symbol.KSNode?' was expected.e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/Logger.kt:28:47 Argument type mismatch: actual type is 'kotlin.Any?', but 'com.google.devtools.ksp.symbol.KSNode?' was expected.
+
+e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/Logger.kt:37:47 Argument type mismatch: actual type is 'kotlin.Any?', but 'com.google.devtools.ksp.symbol.KSNode?' was expected.e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/Logger.kt:37:47 Argument type mismatch: actual type is 'kotlin.Any?', but 'com.google.devtools.ksp.symbol.KSNode?' was expected.
+
+e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/Logger.kt:46:49 Argument type mismatch: actual type is 'kotlin.Any?', but 'com.google.devtools.ksp.symbol.KSNode?' was expected.e: file:///Users/topon/Documents/FusionKit/FusionKit-AutoRegister-Processor/src/main/java/com/horizon/fusionkit/autoregister/processor/Logger.kt:46:49 Argument type mismatch: actual type is 'kotlin.Any?', but 'com.google.devtools.ksp.symbol.KSNode?' was expected.
+
+
+FAILURE: FAILURE: Build failed with an exception.Build failed with an exception.
+
+
+* What went wrong:* What went wrong:
+
+Execution failed for task ':FusionKit-AutoRegister-Processor:compileKotlin'.Execution failed for task ':FusionKit-AutoRegister-Processor:compileKotlin'.
+
+> > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkActionA failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+
+      > > Compilation error. See log for more detailsCompilation error. See log for more details
+
+
+* Try:* Try:
+
+> > Run with Run with --stacktrace--stacktrace option to get the stack trace. option to get the stack trace.
+
+> > Run with Run with --info--info or  or --debug--debug option to get more log output. option to get more log output.
+
+> > Run with Run with --scan--scan to get full insights. to get full insights.
+
+> > Get more help at Get more help at https://help.gradle.orghttps://help.gradle.org..
+
+
+BUILD FAILEDBUILD FAILED in 1s in 1s
+
+2 actionable tasks: 2 executed2 actionable tasks: 2 executed

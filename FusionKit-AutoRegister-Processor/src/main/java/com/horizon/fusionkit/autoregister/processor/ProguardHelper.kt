@@ -1,6 +1,7 @@
 package com.horizon.fusionkit.autoregister.processor
 
-import com.squareup.kotlinpoet.FileSpec
+import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
 import java.io.OutputStreamWriter
 
 /**
@@ -13,8 +14,8 @@ object ProguardHelper {
      * 生成混淆规则文件
      */
     fun generateProguardRules(
-        codeGenerator: com.google.devtools.ksp.processing.CodeGenerator,
-        interfaceToEntries: Map<String, List<ServiceEntry>>
+        codeGenerator: CodeGenerator,
+        interfaceToEntries: Map<String, List<AutoRegisterSymbolProcessor.ServiceEntry>>
     ) {
         val rules = buildString {
             appendLine("# AutoRegister ProGuard Rules")
@@ -23,9 +24,11 @@ object ProguardHelper {
             
             // 保持所有被注册的服务类
             appendLine("# Keep all registered service implementations")
-            interfaceToEntries.values.flatten().forEach { entry ->
-                appendLine("-keep class ${entry.className} { <init>(); }")
-                appendLine("-keepclassmembers class ${entry.className} { public <methods>; }")
+            interfaceToEntries.values.forEach { entries ->
+                entries.forEach { entry ->
+                    appendLine("-keep class ${entry.className} { <init>(); }")
+                    appendLine("-keepclassmembers class ${entry.className} { public <methods>; }")
+                }
             }
             appendLine()
             
@@ -70,7 +73,7 @@ object ProguardHelper {
         }
         
         val file = codeGenerator.createNewFile(
-            dependencies = com.google.devtools.ksp.processing.Dependencies.ALL_FILES,
+            dependencies = Dependencies.ALL_FILES,
             packageName = "",
             fileName = "proguard-autoregister.pro"
         )
@@ -84,8 +87,8 @@ object ProguardHelper {
      * 生成 R8 规则（Android 专用）
      */
     fun generateR8Rules(
-        codeGenerator: com.google.devtools.ksp.processing.CodeGenerator,
-        interfaceToEntries: Map<String, List<ServiceEntry>>
+        codeGenerator: CodeGenerator,
+        interfaceToEntries: Map<String, List<AutoRegisterSymbolProcessor.ServiceEntry>>
     ) {
         val rules = buildString {
             appendLine("# R8 Rules for AutoRegister")
@@ -94,9 +97,11 @@ object ProguardHelper {
             
             // 保持所有服务实现
             appendLine("# Keep service implementations")
-            interfaceToEntries.values.flatten().forEach { entry ->
-                appendLine("-keep class ${entry.className}")
-                appendLine("-keepclassmembers class ${entry.className} { public <methods>; }")
+            interfaceToEntries.values.forEach { entries ->
+                entries.forEach { entry ->
+                    appendLine("-keep class ${entry.className}")
+                    appendLine("-keepclassmembers class ${entry.className} { public <methods>; }")
+                }
             }
             appendLine()
             
@@ -108,19 +113,19 @@ object ProguardHelper {
                 val providersName = "${simpleInterfaceName}Providers"
                 
                 appendLine("-keep class $packageName.$providersName")
-                appendLine("-keepclassmembers class $packageName.$providersName { 
-                    public static *** all();
-                    public static *** byName();
-                    public static *** byType();
-                    public static *** get(...);
-                    public static *** getBest(...);
-                    public static *** getAll(...);
-                }")
+                appendLine("-keepclassmembers class $packageName.$providersName { ")
+                appendLine("    public static *** all();")
+                appendLine("    public static *** byName();")
+                appendLine("    public static *** byType();")
+                appendLine("    public static *** get(...);")
+                appendLine("    public static *** getBest(...);")
+                appendLine("    public static *** getAll(...);")
+                appendLine("}")
             }
         }
         
         val file = codeGenerator.createNewFile(
-            dependencies = com.google.devtools.ksp.processing.Dependencies.ALL_FILES,
+            dependencies = Dependencies.ALL_FILES,
             packageName = "",
             fileName = "r8-autoregister.pro"
         )

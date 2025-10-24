@@ -8,7 +8,7 @@ class AutoRegisterSymbolProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
         return AutoRegisterSymbolProcessor(
             codeGenerator = environment.codeGenerator,
-            logger = environment.logger,
+            kspLogger = environment.logger,
             options = environment.options
         )
     }
