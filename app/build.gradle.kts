@@ -38,10 +38,10 @@ android {
 
 dependencies {
     // KSP 处理器依赖 - 使用 GitHub Packages
-    ksp("com.redamancy.fusionkit:autoregister-processor:1.0.0")
+    ksp("com.redamancy.fusionkit:autoregister-processor:1.0.2-beta")
 
     // 注解依赖 - 使用 GitHub Packages
-    implementation("com.redamancy.fusionkit:autoregister-processor:1.0.0")
+    implementation("com.redamancy.fusionkit:autoregister-processor:1.0.2-beta")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
