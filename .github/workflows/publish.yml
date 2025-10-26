@@ -41,6 +41,7 @@ jobs:
 
       - name: Publish to GitHub Packages
         if: ${{ always() }}
+        continue-on-error: true
         run: ./gradlew :FusionKit-AutoRegister-Processor:publishGprPublicationToGitHubPackagesRepository --stacktrace --info --rerun-tasks
         env:
           GITHUB_ACTOR: ${{ github.actor }}
