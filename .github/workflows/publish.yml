@@ -43,6 +43,8 @@ jobs:
         run: ./gradlew :FusionKit-AutoRegister-Processor:build
       
       - name: Publish to GitHub Packages
+        if: ${{ false }}
+        continue-on-error: true
         run: ./gradlew :FusionKit-AutoRegister-Processor:publishGprPublicationToGitHubPackagesRepository
         env:
           GITHUB_ACTOR: ${{ github.actor }}
