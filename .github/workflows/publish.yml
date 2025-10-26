@@ -42,6 +42,14 @@ jobs:
       - name: Build project
         run: ./gradlew :FusionKit-AutoRegister-Processor:build
       
+      - name: Publish to Maven Central
+        run: ./gradlew :FusionKit-AutoRegister-Processor:publishAllPublicationsToMavenCentralRepository --stacktrace --info
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      
       - name: Publish to GitHub Packages
         if: ${{ false }}
         continue-on-error: true
