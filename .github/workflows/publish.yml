@@ -6,27 +6,24 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-      actions: read
-      security-events: write
-    
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-      
-      - name: Set up JDK 17
+
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: '17'
-          distribution: 'temurin'
-      
-      - name: Cache Gradle packages
+
+      - name: Cache Gradle
         uses: actions/cache@v3
         with:
           path: |
@@ -35,31 +32,31 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
-      
+
       - name: Make gradlew executable
         run: chmod +x ./gradlew
-      
+
       - name: Build project
         run: ./gradlew :FusionKit-AutoRegister-Processor:build
-      
-        - name: Publish to GitHub Packages
-          if: ${{ always() }}
-          run: ./gradlew :FusionKit-AutoRegister-Processor:publishGprPublicationToGitHubPackagesRepository --stacktrace --info --rerun-tasks
-          env:
-            GITHUB_ACTOR: ${{ github.actor }}
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Publish to Maven Central
-          run: ./gradlew :FusionKit-AutoRegister-Processor:publishToMavenCentral --no-configuration-cache --stacktrace --info --rerun-tasks
-          env:
-            ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
-            ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
-            ORG_GRADLE_PROJECT_signingKeyId: 80FCD58FB8A560A6B5DBAF1F8B5940702E4D3605
-            ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-            ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      - name: Publish to GitHub Packages
+        if: ${{ always() }}
+        run: ./gradlew :FusionKit-AutoRegister-Processor:publishGprPublicationToGitHubPackagesRepository --stacktrace --info --rerun-tasks
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-        - name: Close and Release Sonatype Staging
-          run: ./gradlew :FusionKit-AutoRegister-Processor:closeAndReleaseSonatypeStagingRepository --no-configuration-cache --stacktrace --info
-          env:
-            ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-            ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      - name: Publish to Maven Central
+        run: ./gradlew :FusionKit-AutoRegister-Processor:publishToMavenCentral --no-configuration-cache --stacktrace --info --rerun-tasks
+        env:
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingKeyId: 80FCD58FB8A560A6B5DBAF1F8B5940702E4D3605
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+
+      - name: Close and Release Sonatype Staging
+        run: ./gradlew :FusionKit-AutoRegister-Processor:closeAndReleaseSonatypeStagingRepository --no-configuration-cache --stacktrace --info --rerun-tasks
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
