@@ -48,7 +48,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish and Release to Maven Central
-        run: ./gradlew publishAndReleaseToMavenCentral --no-configuration-cache --stacktrace --info --rerun-tasks
+        run: ./gradlew :FusionKit-AutoRegister-Processor:publishAndReleaseToMavenCentral --no-configuration-cache --stacktrace --info --rerun-tasks
         env:
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
