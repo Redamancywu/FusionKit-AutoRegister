@@ -43,7 +43,18 @@ jobs:
         run: ./gradlew :FusionKit-AutoRegister-Processor:build
       
       - name: Publish to GitHub Packages
-        run: ./gradlew :FusionKit-AutoRegister-Processor:publishGprPublicationToGitHubPackagesRepository
+        if: ${{ false }}
+        continue-on-error: true
+        run: ./gradlew :FusionKit-AutoRegister-Processor:publishGprPublicationToGitHubPackagesRepository --stacktrace --info
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to Maven Central
+        run: ./gradlew :FusionKit-AutoRegister-Processor:publishToMavenCentral --no-configuration-cache --stacktrace --info --rerun-tasks
+        env:
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingKeyId: 80FCD58FB8A560A6B5DBAF1F8B5940702E4D3605
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
