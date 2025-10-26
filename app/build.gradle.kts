@@ -36,12 +36,13 @@ android {
     }
 }
 
-dependencies {
-    // KSP 处理器依赖 - 使用 GitHub Packages
-    ksp("com.redamancy.fusionkit:autoregister-processor:1.0.0")
+// 通过属性切换测试版本：默认 1.0.1，可以用 -PfusionkitVersion=1.0.3 切换
+val fusionkitVersion = providers.gradleProperty("fusionkitVersion").orElse("1.0.1").get()
 
-    // 注解依赖 - 使用 GitHub Packages
-    implementation("com.redamancy.fusionkit:autoregister-processor:1.0.0")
+dependencies {
+    // 使用 Maven Central 的坐标
+    ksp("io.github.redamancywu:FusionKit-AutoRegister-Processor:$fusionkitVersion")
+    implementation("io.github.redamancywu:FusionKit-AutoRegister-Processor:$fusionkitVersion")
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
