@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "com.redamancy.fusionkit"
-version = "1.0.2"
+version = "1.0.3-beta"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_11
