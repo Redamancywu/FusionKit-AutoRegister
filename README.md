@@ -29,6 +29,10 @@ FusionKit/
 └── LICENSE                                # MIT License
 ```
 
+## 🔥 Hot Reload Guide
+
+To enable runtime hot reloading, see the detailed guide: [HOT_RELOAD.md](HOT_RELOAD.md).
+
 ## 🎯 What This Framework Does
 
 - **Compile-time Service Discovery** - Automatically finds annotated classes

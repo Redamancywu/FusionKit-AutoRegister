@@ -9,23 +9,33 @@ import com.google.devtools.ksp.symbol.KSNode
  */
 class Logger(private val kspLogger: KSPLogger, private val options: Map<String, String>) {
     
+    enum class LogLevel { OFF, ERROR, WARN, INFO, DEBUG }
+
     private val debugMode = options["auto.register.debug"]?.toBoolean() ?: false
-    private val logLevel = options["auto.register.log.level"]?.uppercase() ?: "INFO"
+    private val level: LogLevel = options["auto.register.log.level"]
+        ?.uppercase()
+        ?.let { name -> LogLevel.values().firstOrNull { it.name == name } }
+        ?: LogLevel.INFO
+
+    private fun allow(requestLevel: LogLevel): Boolean {
+        // 阈值过滤：只有当请求级别不高于当前级别时，才输出
+        return requestLevel.ordinal <= level.ordinal
+    }
     
     /**
-     * 输出调试信息（仅在调试模式下显示）
+     * 输出调试信息（DEBUG 级别或显式调试模式）
      */
     fun debug(message: String, symbol: KSNode? = null) {
-        if (debugMode) {
+        if (allow(LogLevel.DEBUG) || debugMode) {
             kspLogger.info("[DEBUG] $message", symbol)
         }
     }
     
     /**
-     * 输出信息（始终显示）
+     * 输出信息
      */
     fun info(message: String, symbol: KSNode? = null) {
-        if (logLevel in listOf("INFO", "DEBUG", "WARN", "ERROR")) {
+        if (allow(LogLevel.INFO)) {
             kspLogger.info("[INFO] $message", symbol)
         }
     }
@@ -34,22 +44,20 @@ class Logger(private val kspLogger: KSPLogger, private val options: Map<String, 
      * 输出警告信息
      */
     fun warn(message: String, symbol: KSNode? = null) {
-        if (logLevel in listOf("WARN", "DEBUG", "ERROR")) {
+        if (allow(LogLevel.WARN)) {
             kspLogger.warn("[WARN] $message", symbol)
         }
     }
     
     /**
-     * 输出错误信息
+     * 输出错误信息（始终输出）
      */
     fun error(message: String, symbol: KSNode? = null) {
-        if (logLevel in listOf("ERROR", "DEBUG")) {
-            kspLogger.error("[ERROR] $message", symbol)
-        }
+        kspLogger.error("[ERROR] $message", symbol)
     }
     
     /**
-     * 输出编译时信息（给宿主层显示）
+     * 输出编译时信息（仅在调试模式）
      */
     fun compileInfo(message: String) {
         if (debugMode) {
@@ -62,7 +70,7 @@ class Logger(private val kspLogger: KSPLogger, private val options: Map<String, 
     }
     
     /**
-     * 输出统计信息
+     * 输出统计信息（仅在调试模式）
      */
     fun stats(interfaceCount: Int, serviceCount: Int, generatedFiles: Int) {
         if (debugMode) {
@@ -71,7 +79,7 @@ class Logger(private val kspLogger: KSPLogger, private val options: Map<String, 
                 |  - Interfaces processed: $interfaceCount
                 |  - Services registered: $serviceCount
                 |  - Files generated: $generatedFiles
-                |  - Log level: $logLevel
+                |  - Log level: ${level.name}
                 |  - Debug mode: $debugMode
                 """.trimMargin()
             

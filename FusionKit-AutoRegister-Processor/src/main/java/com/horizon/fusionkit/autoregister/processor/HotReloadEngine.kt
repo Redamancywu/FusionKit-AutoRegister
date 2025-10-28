@@ -39,15 +39,17 @@ class HotReloadEngine private constructor() {
     private val reloadCounter = AtomicLong(0)
     
     // 线程池
+    private val watcherThreadId = java.util.concurrent.atomic.AtomicInteger(1)
+    private val reloadThreadId = java.util.concurrent.atomic.AtomicInteger(1)
     private val watcherExecutor = Executors.newCachedThreadPool { r ->
-        Thread(r, "HotReload-Watcher-${Thread.currentThread().id}").apply {
+        Thread(r, "HotReload-Watcher-${watcherThreadId.getAndIncrement()}").apply {
             isDaemon = true
         }
     }
-    private val reloadExecutor = Executors.newFixedThreadPool(
+    private var reloadExecutor: ExecutorService = Executors.newFixedThreadPool(
         config.maxConcurrentReloads
     ) { r ->
-        Thread(r, "HotReload-Executor-${Thread.currentThread().id}").apply {
+        Thread(r, "HotReload-Executor-${reloadThreadId.getAndIncrement()}").apply {
             isDaemon = true
         }
     }
@@ -82,6 +84,13 @@ class HotReloadEngine private constructor() {
         
         try {
             watchService = FileSystems.getDefault().newWatchService()
+            // 使用最新配置重建重载执行器，确保并发数量生效
+            reloadExecutor.shutdownNow()
+            reloadExecutor = Executors.newFixedThreadPool(config.maxConcurrentReloads) { r ->
+                Thread(r, "HotReload-Executor-${reloadThreadId.getAndIncrement()}").apply {
+                    isDaemon = true
+                }
+            }
             isRunning.set(true)
             
             // 启动文件监听

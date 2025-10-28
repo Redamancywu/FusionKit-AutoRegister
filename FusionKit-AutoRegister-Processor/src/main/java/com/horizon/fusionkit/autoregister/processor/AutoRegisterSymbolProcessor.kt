@@ -233,8 +233,18 @@ class AutoRegisterSymbolProcessor(
         val mapStringToProvider = MAP_CLASS.parameterizedBy(STRING_CLASS, interfaceType)
         val mapStringToListProvider = MAP_CLASS.parameterizedBy(STRING_CLASS, listProviderType)
 
+        // 增量处理：将生成文件与其来源 KSFile 关联，避免不必要的全量重编译
+        val originFiles = sorted.mapNotNull { entry ->
+            symbolCache[entry.className]?.containingFile
+        }.distinct()
+        val deps = if (originFiles.isEmpty()) {
+            Dependencies.ALL_FILES
+        } else {
+            Dependencies(aggregating = false, *originFiles.toTypedArray())
+        }
+
         val file = codeGenerator.createNewFile(
-            dependencies = Dependencies.ALL_FILES,
+            dependencies = deps,
             packageName = packageName,
             fileName = providersName
         )

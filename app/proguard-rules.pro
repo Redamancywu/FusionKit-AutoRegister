@@ -19,3 +19,12 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# --- FusionKit AutoRegister / Hot Reload ---
+# 保留编译期生成的 Providers 类，命名结尾为 *Providers
+-keep class **Providers { *; }
+
+# 可选：保留热更新核心引擎与控制器（若在运行时使用这些 API）
+-keep class com.horizon.fusionkit.autoregister.processor.HotReloadEngine { *; }
+-keep class com.horizon.fusionkit.autoregister.processor.HotReloadController { *; }
+-keep class com.horizon.fusionkit.autoregister.processor.ServiceLifecycleManager { *; }

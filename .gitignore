@@ -20,3 +20,8 @@ gradle.properties
 *.token
 *.secret
 gradle.properties.local
+
+# 忽略所有测试代码和目录（不提交到仓库）
+**/src/test/**
+**/src/androidTest/**
+**/test/**
