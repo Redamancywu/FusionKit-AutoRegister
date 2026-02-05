@@ -15,17 +15,24 @@ class AutoRegisterSymbolProcessor(
 ) : SymbolProcessor {
 
     private val interfaceToEntries = mutableMapOf<String, MutableList<ServiceEntry>>()
+    private val debugEnabled get() = options["auto.register.debug"]?.toBoolean() == true
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
         interfaceToEntries.clear()
 
         val symbols = resolver.getSymbolsWithAnnotation(AutoRegister::class.qualifiedName!!)
-            .filter { it.validate() && it is KSClassDeclaration }
             .filterIsInstance<KSClassDeclaration>()
+            .toList()
 
-        val currentEnv = options["auto.register.env"] ?: "RELEASE"
+        val (validSymbols, invalidSymbols) = symbols.partition { it.validate() }
 
-        for (classDecl in symbols) {
+        if (debugEnabled) {
+            logger.info("AutoRegister: total symbols=${symbols.count()}, valid=${validSymbols.count()}, invalid=${invalidSymbols.count()}")
+        }
+
+        val currentEnv = options["auto.register.env"]?.uppercase() ?: "RELEASE"
+
+        for (classDecl in validSymbols) {
             // 支持多个 @AutoRegister 注解
             val autoRegisterAnnotations = classDecl.annotations.filter { it.shortName.asString() == "AutoRegister" }
 
@@ -51,7 +58,7 @@ class AutoRegisterSymbolProcessor(
 
                 // 可选参数
                 val priority = (args["priority"] as? Int) ?: 0
-                val enabledIn = (args["enabledIn"] as? List<KSType>)?.map { it.declaration.simpleName.asString() } ?: listOf("ALL")
+                val enabledIn = (args["enabledIn"] as? List<KSType>)?.map { it.declaration.simpleName.asString().uppercase() } ?: listOf("ALL")
                 val isObject = (args["isObject"] as? Boolean) ?: false
 
                 if (!enabledIn.any { it == "ALL" || it == currentEnv }) continue
@@ -67,14 +74,13 @@ class AutoRegisterSymbolProcessor(
             }
         }
 
-        // 获取所有被引用的接口（确保即使无实现也生成聚合类）
         val allReferencedInterfaces = getAllReferencedInterfaces(resolver)
         allReferencedInterfaces.forEach { iface ->
             val entries = interfaceToEntries[iface] ?: emptyList()
             generateProvidersClass(iface, entries)
         }
 
-        return emptyList()
+        return invalidSymbols
     }
 
     private fun getAllReferencedInterfaces(resolver: Resolver): Set<String> {
@@ -229,7 +235,7 @@ class AutoRegisterSymbolProcessor(
                                         .build()
                                 )
                                 .returns(listProviderType)
-                                .addStatement("return type?.let { byType[it] } ?: all")
+                                .addStatement("return if (type != null) byType[type] ?: emptyList() else all")
                                 .build()
                         )
                         .build()
